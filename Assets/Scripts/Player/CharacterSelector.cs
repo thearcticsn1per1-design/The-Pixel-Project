@@ -236,40 +236,36 @@ namespace PixelProject.Player
             if (preset.healthModifier != 1f)
             {
                 stats.AddModifier(StatType.MaxHealth, new StatModifier(
-                    "CharacterClass",
-                    0f,
-                    preset.healthModifier,
-                    StatModifierType.Multiplicative
+                    preset.healthModifier - 1f, // Convert multiplier to additive bonus
+                    ModifierType.Multiplicative,
+                    "CharacterClass"
                 ));
             }
 
             if (preset.damageModifier != 1f)
             {
                 stats.AddModifier(StatType.Damage, new StatModifier(
-                    "CharacterClass",
-                    0f,
-                    preset.damageModifier,
-                    StatModifierType.Multiplicative
+                    preset.damageModifier - 1f,
+                    ModifierType.Multiplicative,
+                    "CharacterClass"
                 ));
             }
 
             if (preset.moveSpeedModifier != 1f)
             {
                 stats.AddModifier(StatType.MoveSpeed, new StatModifier(
-                    "CharacterClass",
-                    0f,
-                    preset.moveSpeedModifier,
-                    StatModifierType.Multiplicative
+                    preset.moveSpeedModifier - 1f,
+                    ModifierType.Multiplicative,
+                    "CharacterClass"
                 ));
             }
 
             if (preset.attackSpeedModifier != 1f)
             {
                 stats.AddModifier(StatType.AttackSpeed, new StatModifier(
-                    "CharacterClass",
-                    0f,
-                    preset.attackSpeedModifier,
-                    StatModifierType.Multiplicative
+                    preset.attackSpeedModifier - 1f,
+                    ModifierType.Multiplicative,
+                    "CharacterClass"
                 ));
             }
         }
