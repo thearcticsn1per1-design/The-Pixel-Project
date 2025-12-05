@@ -240,7 +240,7 @@ namespace PixelProject.Player
             }
         }
 
-        private float CalculateStat(float baseValue, StatType stat)
+        public float CalculateStat(float baseValue, StatType stat)
         {
             float flatBonus = 0f;
             float multiplicativeBonus = 1f;

@@ -260,7 +260,7 @@ namespace PixelProject.Enemies
             }
 
             // Chance to drop item
-            if (Random.value < enemyData.itemDropChance)
+            if (UnityEngine.Random.value < enemyData.itemDropChance)
             {
                 // Would spawn item drop here
             }
