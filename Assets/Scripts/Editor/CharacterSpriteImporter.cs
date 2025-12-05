@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using PixelProject.Player;
+using AnimState = PixelProject.Player.AnimationState;
 
 namespace PixelProject.Editor
 {
@@ -194,7 +195,7 @@ namespace PixelProject.Editor
             {
                 string animName = Path.GetFileName(animFolder);
 
-                if (!animationMapping.TryGetValue(animName, out AnimationState animState))
+                if (!animationMapping.TryGetValue(animName, out AnimState animState))
                 {
                     Debug.LogWarning($"Unknown animation: {animName}, skipping.");
                     continue;
@@ -256,18 +257,18 @@ namespace PixelProject.Editor
             Debug.Log($"Imported {importedCount} animations for {characterName}");
         }
 
-        private bool ShouldImportAnimation(AnimationState state)
+        private bool ShouldImportAnimation(AnimState state)
         {
             if (importAllAnimations) return true;
 
             return state switch
             {
-                AnimationState.Idle or AnimationState.Idle2 => importIdle,
-                AnimationState.Walk => importWalk,
-                AnimationState.Run or AnimationState.RunBackwards => importRun,
-                AnimationState.Melee or AnimationState.Melee2 or AnimationState.MeleeRun or AnimationState.MeleeSpin => importMelee,
-                AnimationState.Die => importDie,
-                AnimationState.TakeDamage => importTakeDamage,
+                AnimState.Idle or AnimState.Idle2 => importIdle,
+                AnimState.Walk => importWalk,
+                AnimState.Run or AnimState.RunBackwards => importRun,
+                AnimState.Melee or AnimState.Melee2 or AnimState.MeleeRun or AnimState.MeleeSpin => importMelee,
+                AnimState.Die => importDie,
+                AnimState.TakeDamage => importTakeDamage,
                 _ => true
             };
         }
@@ -433,7 +434,7 @@ namespace PixelProject.Editor
     public class CharacterSpriteDataEditor : UnityEditor.Editor
     {
         private Direction8 previewDirection = Direction8.South;
-        private AnimationState previewState = AnimationState.Idle;
+        private AnimState previewState = AnimState.Idle;
         private int previewFrame = 0;
         private float lastFrameTime;
         private bool isPlaying;
@@ -449,7 +450,7 @@ namespace PixelProject.Editor
 
             // Direction and state selection
             previewDirection = (Direction8)EditorGUILayout.EnumPopup("Preview Direction", previewDirection);
-            previewState = (AnimationState)EditorGUILayout.EnumPopup("Preview State", previewState);
+            previewState = (AnimState)EditorGUILayout.EnumPopup("Preview State", previewState);
 
             EditorGUILayout.BeginHorizontal();
             isPlaying = GUILayout.Toggle(isPlaying, isPlaying ? "Stop" : "Play", "Button");
