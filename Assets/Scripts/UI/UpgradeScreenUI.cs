@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using System.Collections.Generic;
 using PixelProject.Items;
 
@@ -15,7 +16,7 @@ namespace PixelProject.UI
         [SerializeField] private GameObject upgradeCardPrefab;
         [SerializeField] private Button skipButton;
         [SerializeField] private Button rerollButton;
-        [SerializeField] private Text rerollCostText;
+        [SerializeField] private TMP_Text rerollCostText;
 
         [Header("Settings")]
         [SerializeField] private int rerollCost = 50;
@@ -118,9 +119,9 @@ namespace PixelProject.UI
         [SerializeField] private Image iconImage;
         [SerializeField] private Image backgroundImage;
         [SerializeField] private Image borderImage;
-        [SerializeField] private Text nameText;
-        [SerializeField] private Text levelText;
-        [SerializeField] private Text descriptionText;
+        [SerializeField] private TMP_Text nameText;
+        [SerializeField] private TMP_Text levelText;
+        [SerializeField] private TMP_Text descriptionText;
         [SerializeField] private Button selectButton;
 
         [Header("Rarity Colors")]
@@ -204,7 +205,7 @@ namespace PixelProject.UI
     /// </summary>
     public class DamageNumber : MonoBehaviour
     {
-        [SerializeField] private Text damageText;
+        [SerializeField] private TMP_Text damageText;
         [SerializeField] private float floatSpeed = 2f;
         [SerializeField] private float lifetime = 1f;
         [SerializeField] private float fadeStartTime = 0.5f;
@@ -230,7 +231,7 @@ namespace PixelProject.UI
                 else if (isCritical)
                 {
                     damageText.color = criticalColor;
-                    damageText.fontSize = Mathf.RoundToInt(damageText.fontSize * 1.5f);
+                    damageText.fontSize *= 1.5f;
                     damageText.text += "!";
                 }
                 else
@@ -272,12 +273,12 @@ namespace PixelProject.UI
     /// </summary>
     public class GameOverScreenUI : MonoBehaviour
     {
-        [SerializeField] private Text titleText;
-        [SerializeField] private Text waveText;
-        [SerializeField] private Text killsText;
-        [SerializeField] private Text goldText;
-        [SerializeField] private Text timeText;
-        [SerializeField] private Text soulsEarnedText;
+        [SerializeField] private TMP_Text titleText;
+        [SerializeField] private TMP_Text waveText;
+        [SerializeField] private TMP_Text killsText;
+        [SerializeField] private TMP_Text goldText;
+        [SerializeField] private TMP_Text timeText;
+        [SerializeField] private TMP_Text soulsEarnedText;
 
         private void OnEnable()
         {

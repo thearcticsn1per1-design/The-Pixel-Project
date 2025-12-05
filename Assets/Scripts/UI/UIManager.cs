@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using System.Collections.Generic;
 using PixelProject.Core;
 using PixelProject.Player;
@@ -28,7 +29,7 @@ namespace PixelProject.UI
         [SerializeField] private WaveDisplay waveDisplay;
         [SerializeField] private GoldDisplay goldDisplay;
         [SerializeField] private WeaponDisplay weaponDisplay;
-        [SerializeField] private Text timerText;
+        [SerializeField] private TMP_Text timerText;
 
         private GameState currentScreenState;
         private List<GameObject> allScreens = new List<GameObject>();
@@ -214,7 +215,7 @@ namespace PixelProject.UI
     public class HealthBar : MonoBehaviour
     {
         [SerializeField] private Image fillImage;
-        [SerializeField] private Text healthText;
+        [SerializeField] private TMP_Text healthText;
         [SerializeField] private Gradient healthGradient;
 
         private PlayerStats playerStats;
@@ -265,7 +266,7 @@ namespace PixelProject.UI
     public class ExperienceBar : MonoBehaviour
     {
         [SerializeField] private Image fillImage;
-        [SerializeField] private Text levelText;
+        [SerializeField] private TMP_Text levelText;
 
         private PlayerStats playerStats;
 
@@ -313,8 +314,8 @@ namespace PixelProject.UI
     /// </summary>
     public class WaveDisplay : MonoBehaviour
     {
-        [SerializeField] private Text waveText;
-        [SerializeField] private Text enemiesText;
+        [SerializeField] private TMP_Text waveText;
+        [SerializeField] private TMP_Text enemiesText;
 
         private void Start()
         {
@@ -363,7 +364,7 @@ namespace PixelProject.UI
     /// </summary>
     public class GoldDisplay : MonoBehaviour
     {
-        [SerializeField] private Text goldText;
+        [SerializeField] private TMP_Text goldText;
 
         private PlayerStats playerStats;
 
@@ -401,7 +402,7 @@ namespace PixelProject.UI
     public class WeaponDisplay : MonoBehaviour
     {
         [SerializeField] private Image weaponIcon;
-        [SerializeField] private Text ammoText;
+        [SerializeField] private TMP_Text ammoText;
         [SerializeField] private Image reloadBar;
 
         private Combat.WeaponController weaponController;
