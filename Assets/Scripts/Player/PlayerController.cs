@@ -6,7 +6,7 @@ namespace PixelProject.Player
 {
     /// <summary>
     /// Main player controller handling movement, aiming, and input.
-    /// Designed for top-down or side-scrolling roguelite gameplay.
+    /// Designed for top-down roguelite gameplay with 8-directional animation support.
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
     public class PlayerController : MonoBehaviour
@@ -25,9 +25,14 @@ namespace PixelProject.Player
         [SerializeField] private float dashCooldown = 1f;
         [SerializeField] private bool dashInvincible = true;
 
+        [Header("Animation Settings")]
+        [SerializeField] private bool useAimDirectionForFacing = true;
+        [SerializeField] private float runThreshold = 0.1f;
+
         [Header("References")]
         [SerializeField] private Transform weaponPivot;
         [SerializeField] private SpriteRenderer spriteRenderer;
+        [SerializeField] private EightDirectionalAnimator animator;
 
         private Rigidbody2D rb;
         private PlayerStats stats;
@@ -40,11 +45,17 @@ namespace PixelProject.Player
         private float dashTimer;
         private float dashCooldownTimer;
         private Vector2 dashDirection;
+        private bool isAttacking;
+        private AnimationState currentAnimState;
 
         public Vector2 AimDirection => aimDirection;
+        public Vector2 MoveInput => moveInput;
         public bool IsDashing => isDashing;
+        public bool IsAttacking => isAttacking;
+        public bool IsMoving => moveInput.magnitude > runThreshold;
         public bool IsInvincible => isDashing && dashInvincible;
         public float CurrentMoveSpeed => baseMoveSpeed * (stats?.MoveSpeedMultiplier ?? 1f);
+        public EightDirectionalAnimator Animator => animator;
 
         private void Awake()
         {
@@ -59,6 +70,12 @@ namespace PixelProject.Player
             stats = GetComponent<PlayerStats>();
             weaponController = GetComponentInChildren<WeaponController>();
 
+            // Get animator if not assigned
+            if (animator == null)
+            {
+                animator = GetComponent<EightDirectionalAnimator>();
+            }
+
             rb.gravityScale = 0f;
             rb.constraints = RigidbodyConstraints2D.FreezeRotation;
         }
@@ -70,6 +87,7 @@ namespace PixelProject.Player
             HandleInput();
             HandleAiming();
             UpdateTimers();
+            UpdateAnimation();
         }
 
         private void FixedUpdate()
@@ -135,8 +153,16 @@ namespace PixelProject.Player
                 weaponPivot.rotation = Quaternion.Euler(0f, 0f, angle);
             }
 
-            // Flip sprite based on aim direction
-            if (spriteRenderer != null)
+            // Update animator direction based on aim or movement
+            if (animator != null)
+            {
+                Vector2 facingDirection = useAimDirectionForFacing ? aimDirection :
+                    (moveInput.magnitude > runThreshold ? moveInput : aimDirection);
+                animator.SetDirection(facingDirection);
+            }
+
+            // Flip sprite based on aim direction (fallback if no 8-dir animator)
+            if (spriteRenderer != null && animator == null)
             {
                 spriteRenderer.flipX = aimDirection.x < 0;
             }
@@ -197,6 +223,85 @@ namespace PixelProject.Player
             {
                 dashCooldownTimer -= Time.deltaTime;
             }
+        }
+
+        private void UpdateAnimation()
+        {
+            if (animator == null) return;
+
+            // Don't interrupt attack animations
+            if (isAttacking) return;
+
+            AnimationState targetState;
+
+            if (isDashing)
+            {
+                targetState = AnimationState.Rolling;
+            }
+            else if (moveInput.magnitude > runThreshold)
+            {
+                targetState = AnimationState.Run;
+            }
+            else
+            {
+                targetState = AnimationState.Idle;
+            }
+
+            if (targetState != currentAnimState)
+            {
+                currentAnimState = targetState;
+                animator.PlayAnimation(targetState, true);
+            }
+        }
+
+        /// <summary>
+        /// Triggers an attack animation. Called by WeaponController.
+        /// </summary>
+        public void PlayAttackAnimation(bool isSecondary = false)
+        {
+            if (animator == null) return;
+
+            isAttacking = true;
+            AnimationState attackAnim = isSecondary ? AnimationState.Melee2 : AnimationState.Melee;
+
+            animator.PlayAnimation(attackAnim, false, OnAttackAnimationComplete);
+        }
+
+        /// <summary>
+        /// Triggers a spell cast animation.
+        /// </summary>
+        public void PlayCastAnimation()
+        {
+            if (animator == null) return;
+
+            isAttacking = true;
+            animator.PlayAnimation(AnimationState.CastSpell, false, OnAttackAnimationComplete);
+        }
+
+        private void OnAttackAnimationComplete()
+        {
+            isAttacking = false;
+        }
+
+        /// <summary>
+        /// Triggers damage reaction animation.
+        /// </summary>
+        public void PlayDamageAnimation()
+        {
+            if (animator == null) return;
+
+            animator.PlayOneShotAnimation(AnimationState.TakeDamage, currentAnimState);
+            animator.TriggerDamageFlash();
+        }
+
+        /// <summary>
+        /// Triggers death animation.
+        /// </summary>
+        public void PlayDeathAnimation()
+        {
+            if (animator == null) return;
+
+            animator.PlayAnimation(AnimationState.Die, false);
         }
 
         public void ApplyKnockback(Vector2 direction, float force)
