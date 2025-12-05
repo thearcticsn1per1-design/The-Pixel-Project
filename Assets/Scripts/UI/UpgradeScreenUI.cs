@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 using System.Collections.Generic;
 using PixelProject.Items;
 
@@ -6,13 +8,15 @@ namespace PixelProject.UI
 {
     /// <summary>
     /// UI controller for the upgrade selection screen.
-    /// Framework-agnostic implementation that works without Unity UI or TextMeshPro.
     /// </summary>
     public class UpgradeScreenUI : MonoBehaviour
     {
         [Header("References")]
         [SerializeField] private Transform upgradeCardsParent;
         [SerializeField] private GameObject upgradeCardPrefab;
+        [SerializeField] private Button skipButton;
+        [SerializeField] private Button rerollButton;
+        [SerializeField] private TMP_Text rerollCostText;
 
         [Header("Settings")]
         [SerializeField] private int rerollCost = 50;
@@ -22,11 +26,10 @@ namespace PixelProject.UI
         private List<UpgradeData> currentUpgrades;
         private int currentRerollCost;
 
-        public int CurrentRerollCost => currentRerollCost;
-
         private void OnEnable()
         {
             currentRerollCost = rerollCost;
+            UpdateRerollButton();
         }
 
         public void DisplayUpgrades(List<UpgradeData> upgrades)
@@ -71,14 +74,12 @@ namespace PixelProject.UI
             UIManager.Instance?.HideUpgradeScreen();
         }
 
-        // Call this from a button
         public void OnSkipClicked()
         {
             UpgradeSystem.Instance?.SkipUpgrade();
             UIManager.Instance?.HideUpgradeScreen();
         }
 
-        // Call this from a button
         public void OnRerollClicked()
         {
             var playerStats = Player.PlayerController.Instance?.GetComponent<Player.PlayerStats>();
@@ -87,26 +88,41 @@ namespace PixelProject.UI
             if (playerStats.SpendGold(currentRerollCost))
             {
                 currentRerollCost = Mathf.RoundToInt(currentRerollCost * rerollCostIncrease);
+                UpdateRerollButton();
+
                 UpgradeSystem.Instance?.Reroll();
             }
         }
 
-        public bool CanAffordReroll()
+        private void UpdateRerollButton()
         {
-            var playerStats = Player.PlayerController.Instance?.GetComponent<Player.PlayerStats>();
-            return playerStats != null && playerStats.Gold >= currentRerollCost;
+            if (rerollCostText != null)
+            {
+                rerollCostText.text = $"Reroll ({currentRerollCost}g)";
+            }
+
+            // Disable if not enough gold
+            if (rerollButton != null)
+            {
+                var playerStats = Player.PlayerController.Instance?.GetComponent<Player.PlayerStats>();
+                rerollButton.interactable = playerStats != null && playerStats.Gold >= currentRerollCost;
+            }
         }
     }
 
     /// <summary>
     /// Individual upgrade card UI element.
-    /// Framework-agnostic - use SpriteRenderers for icons and expose data for custom UI.
     /// </summary>
     public class UpgradeCardUI : MonoBehaviour
     {
         [Header("References")]
-        [SerializeField] private SpriteRenderer iconRenderer;
-        [SerializeField] private SpriteRenderer borderRenderer;
+        [SerializeField] private Image iconImage;
+        [SerializeField] private Image backgroundImage;
+        [SerializeField] private Image borderImage;
+        [SerializeField] private TMP_Text nameText;
+        [SerializeField] private TMP_Text levelText;
+        [SerializeField] private TMP_Text descriptionText;
+        [SerializeField] private Button selectButton;
 
         [Header("Rarity Colors")]
         [SerializeField] private Color commonColor = Color.gray;
@@ -119,28 +135,45 @@ namespace PixelProject.UI
         private int cardIndex;
         private System.Action<int> onSelectCallback;
 
-        // Public properties for custom UI bindings
-        public UpgradeData Data => upgradeData;
-        public string UpgradeName => upgradeData?.upgradeName ?? "";
-        public string Description { get; private set; }
-        public int Level { get; private set; }
-
         public void Setup(UpgradeData upgrade, int level, int index, System.Action<int> callback)
         {
             upgradeData = upgrade;
             cardIndex = index;
             onSelectCallback = callback;
-            Level = level;
-            Description = upgrade?.GetDescription(level) ?? "";
 
             // Set icon
-            if (iconRenderer != null && upgrade?.icon != null)
+            if (iconImage != null && upgrade.icon != null)
             {
-                iconRenderer.sprite = upgrade.icon;
+                iconImage.sprite = upgrade.icon;
+            }
+
+            // Set name
+            if (nameText != null)
+            {
+                nameText.text = upgrade.upgradeName;
+            }
+
+            // Set level
+            if (levelText != null)
+            {
+                levelText.text = $"Level {level}";
+            }
+
+            // Set description
+            if (descriptionText != null)
+            {
+                descriptionText.text = upgrade.GetDescription(level);
             }
 
             // Set rarity color
-            SetRarityColor(upgrade?.rarity ?? Core.ItemRarity.Common);
+            SetRarityColor(upgrade.rarity);
+
+            // Setup button
+            if (selectButton != null)
+            {
+                selectButton.onClick.RemoveAllListeners();
+                selectButton.onClick.AddListener(OnSelectClicked);
+            }
         }
 
         private void SetRarityColor(Core.ItemRarity rarity)
@@ -155,31 +188,24 @@ namespace PixelProject.UI
                 _ => commonColor
             };
 
-            if (borderRenderer != null)
+            if (borderImage != null)
             {
-                borderRenderer.color = color;
+                borderImage.color = color;
             }
         }
 
-        // Call this from a button or click handler
-        public void OnSelectClicked()
+        private void OnSelectClicked()
         {
             onSelectCallback?.Invoke(cardIndex);
-        }
-
-        // For mouse click detection if not using UI buttons
-        private void OnMouseDown()
-        {
-            OnSelectClicked();
         }
     }
 
     /// <summary>
-    /// Floating damage number - framework agnostic, uses SpriteRenderer or TextMesh.
+    /// Floating damage number UI element.
     /// </summary>
     public class DamageNumber : MonoBehaviour
     {
-        [SerializeField] private TextMesh damageTextMesh; // Use 3D TextMesh instead of UI Text
+        [SerializeField] private TMP_Text damageText;
         [SerializeField] private float floatSpeed = 2f;
         [SerializeField] private float lifetime = 1f;
         [SerializeField] private float fadeStartTime = 0.5f;
@@ -192,12 +218,14 @@ namespace PixelProject.UI
         private float timer;
         private Vector3 startPosition;
         private Color currentColor;
+        private float baseFontSize;
 
         public void Initialize(float damage, bool isCritical = false, bool isHeal = false)
         {
-            if (damageTextMesh != null)
+            if (damageText != null)
             {
-                damageTextMesh.text = isHeal ? $"+{damage:F0}" : damage.ToString("F0");
+                baseFontSize = damageText.fontSize;
+                damageText.text = isHeal ? $"+{damage:F0}" : damage.ToString("F0");
 
                 if (isHeal)
                 {
@@ -206,15 +234,15 @@ namespace PixelProject.UI
                 else if (isCritical)
                 {
                     currentColor = criticalColor;
-                    damageTextMesh.characterSize *= 1.5f;
-                    damageTextMesh.text += "!";
+                    damageText.fontSize = baseFontSize * 1.5f;
+                    damageText.text += "!";
                 }
                 else
                 {
                     currentColor = normalColor;
                 }
 
-                damageTextMesh.color = currentColor;
+                damageText.color = currentColor;
             }
 
             startPosition = transform.position;
@@ -229,12 +257,12 @@ namespace PixelProject.UI
             transform.position = startPosition + Vector3.up * (floatSpeed * timer);
 
             // Fade out
-            if (timer >= fadeStartTime && damageTextMesh != null)
+            if (timer >= fadeStartTime && damageText != null)
             {
                 float fadeProgress = (timer - fadeStartTime) / (lifetime - fadeStartTime);
                 Color color = currentColor;
                 color.a = 1f - fadeProgress;
-                damageTextMesh.color = color;
+                damageText.color = color;
             }
 
             // Destroy
@@ -246,38 +274,54 @@ namespace PixelProject.UI
     }
 
     /// <summary>
-    /// Game over screen UI controller - framework agnostic.
-    /// Exposes data properties for custom UI bindings.
+    /// Game over screen UI controller.
     /// </summary>
     public class GameOverScreenUI : MonoBehaviour
     {
-        // Public properties that can be read by custom UI systems
-        public bool IsVictory { get; private set; }
-        public int WaveReached { get; private set; }
-        public int EnemiesKilled { get; private set; }
-        public int GoldCollected { get; private set; }
-        public float RunTime { get; private set; }
-        public string FormattedTime { get; private set; }
+        [SerializeField] private TMP_Text titleText;
+        [SerializeField] private TMP_Text waveText;
+        [SerializeField] private TMP_Text killsText;
+        [SerializeField] private TMP_Text goldText;
+        [SerializeField] private TMP_Text timeText;
+        [SerializeField] private TMP_Text soulsEarnedText;
 
         private void OnEnable()
         {
-            UpdateStats();
+            DisplayStats();
         }
 
-        private void UpdateStats()
+        private void DisplayStats()
         {
             var gameManager = Core.GameManager.Instance;
             if (gameManager == null) return;
 
-            IsVictory = gameManager.CurrentState == Core.GameState.Victory;
-            WaveReached = gameManager.CurrentWave;
-            EnemiesKilled = gameManager.EnemiesKilled;
-            GoldCollected = gameManager.GoldCollected;
-            RunTime = gameManager.RunTime;
+            if (titleText != null)
+            {
+                titleText.text = gameManager.CurrentState == Core.GameState.Victory ? "Victory!" : "Game Over";
+            }
 
-            int minutes = Mathf.FloorToInt(RunTime / 60f);
-            int seconds = Mathf.FloorToInt(RunTime % 60f);
-            FormattedTime = $"{minutes:00}:{seconds:00}";
+            if (waveText != null)
+            {
+                waveText.text = $"Wave Reached: {gameManager.CurrentWave}";
+            }
+
+            if (killsText != null)
+            {
+                killsText.text = $"Enemies Killed: {gameManager.EnemiesKilled}";
+            }
+
+            if (goldText != null)
+            {
+                goldText.text = $"Gold Collected: {gameManager.GoldCollected}";
+            }
+
+            if (timeText != null)
+            {
+                float time = gameManager.RunTime;
+                int minutes = Mathf.FloorToInt(time / 60f);
+                int seconds = Mathf.FloorToInt(time % 60f);
+                timeText.text = $"Time: {minutes:00}:{seconds:00}";
+            }
         }
     }
 }
