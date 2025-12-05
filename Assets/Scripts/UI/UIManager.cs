@@ -1,6 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
 using System.Collections.Generic;
 using PixelProject.Core;
 using PixelProject.Player;
@@ -10,6 +8,7 @@ namespace PixelProject.UI
 {
     /// <summary>
     /// Central manager for all UI elements and screens.
+    /// This implementation is UI-framework agnostic and works without Unity UI or TextMeshPro packages.
     /// </summary>
     public class UIManager : MonoBehaviour
     {
@@ -29,7 +28,6 @@ namespace PixelProject.UI
         [SerializeField] private WaveDisplay waveDisplay;
         [SerializeField] private GoldDisplay goldDisplay;
         [SerializeField] private WeaponDisplay weaponDisplay;
-        [SerializeField] private TMP_Text timerText;
 
         private GameState currentScreenState;
         private List<GameObject> allScreens = new List<GameObject>();
@@ -84,15 +82,6 @@ namespace PixelProject.UI
 
         private void Update()
         {
-            // Update timer
-            if (timerText != null && GameManager.Instance != null)
-            {
-                float time = GameManager.Instance.RunTime;
-                int minutes = Mathf.FloorToInt(time / 60f);
-                int seconds = Mathf.FloorToInt(time % 60f);
-                timerText.text = $"{minutes:00}:{seconds:00}";
-            }
-
             // Escape key handling
             if (Input.GetKeyDown(KeyCode.Escape))
             {
@@ -182,7 +171,7 @@ namespace PixelProject.UI
             }
         }
 
-        // Button callbacks
+        // Button callbacks - connect these to UI buttons in the inspector
         public void OnStartGameClicked()
         {
             GameManager.Instance?.StartNewRun();
@@ -210,18 +199,25 @@ namespace PixelProject.UI
     }
 
     /// <summary>
-    /// Health bar UI component.
+    /// Health bar UI component - framework agnostic.
+    /// Assign any UI text/image components and use SendMessage or direct references.
     /// </summary>
     public class HealthBar : MonoBehaviour
     {
-        [SerializeField] private Image fillImage;
-        [SerializeField] private TMP_Text healthText;
+        [SerializeField] private Transform fillTransform; // Scale this for fill amount
+        [SerializeField] private SpriteRenderer fillSprite; // Optional: for color changes
         [SerializeField] private Gradient healthGradient;
 
         private PlayerStats playerStats;
+        private Vector3 originalScale;
 
         private void Start()
         {
+            if (fillTransform != null)
+            {
+                originalScale = fillTransform.localScale;
+            }
+
             playerStats = PlayerController.Instance?.GetComponent<PlayerStats>();
 
             if (playerStats != null)
@@ -241,37 +237,39 @@ namespace PixelProject.UI
 
         private void UpdateDisplay(float current, float max)
         {
-            float percent = current / max;
+            float percent = max > 0 ? current / max : 0f;
 
-            if (fillImage != null)
+            if (fillTransform != null)
             {
-                fillImage.fillAmount = percent;
-
-                if (healthGradient != null)
-                {
-                    fillImage.color = healthGradient.Evaluate(percent);
-                }
+                Vector3 scale = originalScale;
+                scale.x = originalScale.x * percent;
+                fillTransform.localScale = scale;
             }
 
-            if (healthText != null)
+            if (fillSprite != null && healthGradient != null)
             {
-                healthText.text = $"{Mathf.CeilToInt(current)} / {Mathf.CeilToInt(max)}";
+                fillSprite.color = healthGradient.Evaluate(percent);
             }
         }
     }
 
     /// <summary>
-    /// Experience bar UI component.
+    /// Experience bar UI component - framework agnostic.
     /// </summary>
     public class ExperienceBar : MonoBehaviour
     {
-        [SerializeField] private Image fillImage;
-        [SerializeField] private TMP_Text levelText;
+        [SerializeField] private Transform fillTransform;
 
         private PlayerStats playerStats;
+        private Vector3 originalScale;
 
         private void Start()
         {
+            if (fillTransform != null)
+            {
+                originalScale = fillTransform.localScale;
+            }
+
             playerStats = PlayerController.Instance?.GetComponent<PlayerStats>();
 
             if (playerStats != null)
@@ -290,32 +288,30 @@ namespace PixelProject.UI
 
         private void Update()
         {
-            if (playerStats == null) return;
+            if (playerStats == null || fillTransform == null) return;
 
-            float percent = (float)playerStats.Experience / playerStats.ExpToNextLevel;
+            float percent = playerStats.ExpToNextLevel > 0
+                ? (float)playerStats.Experience / playerStats.ExpToNextLevel
+                : 0f;
 
-            if (fillImage != null)
-            {
-                fillImage.fillAmount = percent;
-            }
+            Vector3 scale = originalScale;
+            scale.x = originalScale.x * percent;
+            fillTransform.localScale = scale;
         }
 
         private void OnLevelUp(int newLevel)
         {
-            if (levelText != null)
-            {
-                levelText.text = $"Lv. {newLevel}";
-            }
+            Debug.Log($"Level Up! Now level {newLevel}");
         }
     }
 
     /// <summary>
-    /// Wave display UI component.
+    /// Wave display UI component - framework agnostic.
     /// </summary>
     public class WaveDisplay : MonoBehaviour
     {
-        [SerializeField] private TMP_Text waveText;
-        [SerializeField] private TMP_Text enemiesText;
+        public int CurrentWave { get; private set; }
+        public int EnemyCount { get; private set; }
 
         private void Start()
         {
@@ -339,32 +335,24 @@ namespace PixelProject.UI
 
         private void OnWaveStarted(int wave)
         {
-            if (waveText != null)
-            {
-                waveText.text = $"Wave {wave}";
-            }
+            CurrentWave = wave;
         }
 
         private void OnEnemyKilled(EnemyKilledEvent evt)
         {
-            UpdateEnemyCount();
-        }
-
-        private void UpdateEnemyCount()
-        {
-            if (enemiesText != null && Enemies.EnemySpawner.Instance != null)
+            if (Enemies.EnemySpawner.Instance != null)
             {
-                enemiesText.text = $"Enemies: {Enemies.EnemySpawner.Instance.ActiveEnemyCount}";
+                EnemyCount = Enemies.EnemySpawner.Instance.ActiveEnemyCount;
             }
         }
     }
 
     /// <summary>
-    /// Gold display UI component.
+    /// Gold display UI component - framework agnostic.
     /// </summary>
     public class GoldDisplay : MonoBehaviour
     {
-        [SerializeField] private TMP_Text goldText;
+        public int CurrentGold { get; private set; }
 
         private PlayerStats playerStats;
 
@@ -389,23 +377,22 @@ namespace PixelProject.UI
 
         private void UpdateDisplay(int gold)
         {
-            if (goldText != null)
-            {
-                goldText.text = gold.ToString();
-            }
+            CurrentGold = gold;
         }
     }
 
     /// <summary>
-    /// Weapon display UI component.
+    /// Weapon display UI component - framework agnostic.
     /// </summary>
     public class WeaponDisplay : MonoBehaviour
     {
-        [SerializeField] private Image weaponIcon;
-        [SerializeField] private TMP_Text ammoText;
-        [SerializeField] private Image reloadBar;
+        [SerializeField] private SpriteRenderer weaponIconRenderer;
 
         private Combat.WeaponController weaponController;
+
+        public int CurrentAmmo { get; private set; }
+        public int MaxAmmo { get; private set; }
+        public bool IsReloading { get; private set; }
 
         private void Start()
         {
@@ -420,22 +407,19 @@ namespace PixelProject.UI
             if (currentWeapon == null) return;
 
             // Update icon
-            if (weaponIcon != null && currentWeapon.Data.iconSprite != null)
+            if (weaponIconRenderer != null && currentWeapon.Data.weaponSprite != null)
             {
-                weaponIcon.sprite = currentWeapon.Data.iconSprite;
+                weaponIconRenderer.sprite = currentWeapon.Data.weaponSprite;
             }
 
-            // Update ammo
-            if (ammoText != null && currentWeapon.Data.usesAmmo)
+            // Update ammo info
+            if (currentWeapon.Data.usesAmmo)
             {
-                ammoText.text = $"{currentWeapon.CurrentAmmo} / {currentWeapon.Data.magazineSize}";
+                CurrentAmmo = currentWeapon.CurrentAmmo;
+                MaxAmmo = currentWeapon.Data.magazineSize;
             }
 
-            // Update reload bar
-            if (reloadBar != null)
-            {
-                reloadBar.gameObject.SetActive(weaponController.IsReloading);
-            }
+            IsReloading = weaponController.IsReloading;
         }
     }
 }
