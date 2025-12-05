@@ -1,4 +1,5 @@
 using UnityEngine;
+using PixelProject.Player;
 
 namespace PixelProject.Combat
 {
@@ -31,7 +32,7 @@ namespace PixelProject.Combat
             if (grenadePrefab == null) return;
 
             var firePoint = owner.GetComponentInChildren<Transform>();
-            var controller = owner.GetComponentInParent<Player.PlayerController>();
+            var controller = owner.GetComponentInParent<PlayerController>();
 
             Vector2 direction = controller?.AimDirection ?? Vector2.right;
 
@@ -62,7 +63,7 @@ namespace PixelProject.Combat
 
         public override void Execute(GameObject owner)
         {
-            var controller = owner.GetComponentInParent<Player.PlayerController>();
+            var controller = owner.GetComponentInParent<PlayerController>();
             if (controller == null) return;
 
             // The dash attack would be implemented with coroutine or state machine
@@ -82,17 +83,17 @@ namespace PixelProject.Combat
 
         public override void Execute(GameObject owner)
         {
-            var stats = owner.GetComponentInParent<Player.PlayerStats>();
+            var stats = owner.GetComponentInParent<PlayerStats>();
             if (stats == null) return;
 
             // Add temporary damage reduction
-            var modifier = new Player.StatModifier(
+            var modifier = new StatModifier(
                 -damageReduction,
-                Player.ModifierType.Multiplicative,
+                ModifierType.Multiplicative,
                 "shield_ability",
                 duration
             );
-            stats.AddModifier(Player.StatType.Armor, modifier);
+            stats.AddModifier(StatType.Armor, modifier);
 
             if (shieldEffectPrefab != null)
             {

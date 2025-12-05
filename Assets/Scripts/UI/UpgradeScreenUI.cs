@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
+using PixelProject.Core;
 using PixelProject.Items;
 
 namespace PixelProject.UI
@@ -176,15 +177,15 @@ namespace PixelProject.UI
             }
         }
 
-        private void SetRarityColor(Core.ItemRarity rarity)
+        private void SetRarityColor(ItemRarity rarity)
         {
             Color color = rarity switch
             {
-                Core.ItemRarity.Common => commonColor,
-                Core.ItemRarity.Uncommon => uncommonColor,
-                Core.ItemRarity.Rare => rareColor,
-                Core.ItemRarity.Epic => epicColor,
-                Core.ItemRarity.Legendary => legendaryColor,
+                ItemRarity.Common => commonColor,
+                ItemRarity.Uncommon => uncommonColor,
+                ItemRarity.Rare => rareColor,
+                ItemRarity.Epic => epicColor,
+                ItemRarity.Legendary => legendaryColor,
                 _ => commonColor
             };
 
@@ -292,12 +293,12 @@ namespace PixelProject.UI
 
         private void DisplayStats()
         {
-            var gameManager = Core.GameManager.Instance;
+            var gameManager = GameManager.Instance;
             if (gameManager == null) return;
 
             if (titleText != null)
             {
-                titleText.text = gameManager.CurrentState == Core.GameState.Victory ? "Victory!" : "Game Over";
+                titleText.text = gameManager.CurrentState == GameState.Victory ? "Victory!" : "Game Over";
             }
 
             if (waveText != null)
