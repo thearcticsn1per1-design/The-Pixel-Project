@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
 using PixelProject.Player;
+using AnimState = PixelProject.Player.AnimationState;
 
 namespace PixelProject.UI
 {
@@ -36,7 +37,7 @@ namespace PixelProject.UI
 
         [Header("Preview")]
         [SerializeField] private EightDirectionalAnimator previewAnimator;
-        [SerializeField] private AnimationState previewAnimation = AnimationState.Idle;
+        [SerializeField] private AnimState previewAnimation = AnimState.Idle;
 
         private int currentDisplayIndex = 0;
         private List<CharacterSlotUI> characterSlots = new List<CharacterSlotUI>();

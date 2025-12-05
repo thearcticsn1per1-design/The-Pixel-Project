@@ -1,6 +1,7 @@
 using UnityEngine;
 using PixelProject.Core;
 using PixelProject.Combat;
+using AnimState = PixelProject.Player.AnimationState;
 
 namespace PixelProject.Player
 {
@@ -46,7 +47,7 @@ namespace PixelProject.Player
         private float dashCooldownTimer;
         private Vector2 dashDirection;
         private bool isAttacking;
-        private AnimationState currentAnimState;
+        private AnimState currentAnimState;
 
         public Vector2 AimDirection => aimDirection;
         public Vector2 MoveInput => moveInput;
@@ -232,19 +233,19 @@ namespace PixelProject.Player
             // Don't interrupt attack animations
             if (isAttacking) return;
 
-            AnimationState targetState;
+            AnimState targetState;
 
             if (isDashing)
             {
-                targetState = AnimationState.Rolling;
+                targetState = AnimState.Rolling;
             }
             else if (moveInput.magnitude > runThreshold)
             {
-                targetState = AnimationState.Run;
+                targetState = AnimState.Run;
             }
             else
             {
-                targetState = AnimationState.Idle;
+                targetState = AnimState.Idle;
             }
 
             if (targetState != currentAnimState)
@@ -262,7 +263,7 @@ namespace PixelProject.Player
             if (animator == null) return;
 
             isAttacking = true;
-            AnimationState attackAnim = isSecondary ? AnimationState.Melee2 : AnimationState.Melee;
+            AnimState attackAnim = isSecondary ? AnimState.Melee2 : AnimState.Melee;
 
             animator.PlayAnimation(attackAnim, false, OnAttackAnimationComplete);
         }
@@ -275,7 +276,7 @@ namespace PixelProject.Player
             if (animator == null) return;
 
             isAttacking = true;
-            animator.PlayAnimation(AnimationState.CastSpell, false, OnAttackAnimationComplete);
+            animator.PlayAnimation(AnimState.CastSpell, false, OnAttackAnimationComplete);
         }
 
         private void OnAttackAnimationComplete()
@@ -290,7 +291,7 @@ namespace PixelProject.Player
         {
             if (animator == null) return;
 
-            animator.PlayOneShotAnimation(AnimationState.TakeDamage, currentAnimState);
+            animator.PlayOneShotAnimation(AnimState.TakeDamage, currentAnimState);
             animator.TriggerDamageFlash();
         }
 
@@ -301,7 +302,7 @@ namespace PixelProject.Player
         {
             if (animator == null) return;
 
-            animator.PlayAnimation(AnimationState.Die, false);
+            animator.PlayAnimation(AnimState.Die, false);
         }
 
         public void ApplyKnockback(Vector2 direction, float force)
